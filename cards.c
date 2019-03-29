@@ -107,17 +107,17 @@ hash_table_insert(struct Cards *ht, const wchar_t * question,
 	ht->buckets[hashed_key].head = kv;
 	ht->buckets[hashed_key].size++;
 
-	/*if (ht->buckets[hashed_key].size > 1) {
-		fprintf(stderr, "collision!\n");
-		sleep(1);
-	}*/
+	/*
+	 * if (ht->buckets[hashed_key].size > 1) { fprintf(stderr,
+	 * "collision!\n"); sleep(1); }
+	 */
 
 	return (0);
 }
 
 /* hardcore */
 void
-hash_table_iterate_over(struct Cards *ht, void (*f) (struct Card *))
+hash_table_iterate_over(struct Cards *ht, void (*f) (const struct Card *))
 {
 	for (int i = 0; i < ht->size; i++) {
 		struct Card    *kv = ht->buckets[i].head;
@@ -134,16 +134,24 @@ hash_table_iterate_over(struct Cards *ht, void (*f) (struct Card *))
 static struct Card *next_card;
 
 void
-select_next_card(struct Card *card)
+select_next_card(const struct Card *card)
 {
 
 	if (next_card == NULL
-	    || card->priority > next_card->priority
-	    || card->last_appearance < next_card->last_appearance) {
+	    || (card->priority > next_card->priority
+		&& card->last_appearance <= next_card->last_appearance)) {
 		if (rand() >= RAND_MAX / 3)	/* 2/3 chances of being
 						 * selected */
 			next_card = card;
 	}
+
+	return;
+}
+
+void
+dump_card(const struct Card *card)
+{
+	printf("%ls\t%ls", card->question, card->answer);
 
 	return;
 }
@@ -154,7 +162,7 @@ select_next_card(struct Card *card)
 #define ht_iterate	hash_table_iterate_over
 
 int
-main()
+main(int argc, char *argv[])
 {
 	(void)setlocale(LC_ALL, "");
 
@@ -183,15 +191,127 @@ main()
 	o(L"う", L"u\n");
 	o(L"え", L"e\n");
 	o(L"お", L"o\n");
+
 	o(L"か", L"ka\n");
 	o(L"き", L"ki\n");
 	o(L"く", L"ku\n");
 	o(L"け", L"ke\n");
 	o(L"こ", L"ko\n");
 
+	o(L"が", L"ga\n");
+	o(L"ぎ", L"gi\n");
+	o(L"ぐ", L"gu\n");
+	o(L"げ", L"ge\n");
+	o(L"ご", L"go\n");
+
+	o(L"さ", L"sa\n");
+	o(L"す", L"su\n");
+	o(L"せ", L"se\n");
+	o(L"そ", L"so\n");
+
+	o(L"ざ", L"za\n");
+	o(L"ず", L"zu\n");
+	o(L"ぜ", L"ze\n");
+	o(L"ぞ", L"zo\n");
+
+	o(L"じゃ", L"jya\n");
+	o(L"じゅ", L"jyu\n");
+	o(L"じょ", L"jyo\n");
+
+	o(L"た", L"ta\n");
+	o(L"て", L"te\n");
+	o(L"と", L"to\n");
+
+	o(L"だ", L"da\n");
+	o(L"で", L"de\n");
+	o(L"ど", L"do\n");
+
+	o(L"な", L"na\n");
+	o(L"に", L"ni\n");
+	o(L"ぬ", L"nu\n");
+	o(L"ね", L"ne\n");
+	o(L"の", L"no\n");
+
+	o(L"は", L"ha\n");
+	o(L"ひ", L"hi\n");
+	o(L"へ", L"he\n");
+	o(L"ほ", L"ho\n");
+
+	o(L"ば", L"ba\n");
+	o(L"び", L"bi\n");
+	o(L"ぶ", L"bu\n");
+	o(L"べ", L"be\n");
+	o(L"ぼ", L"bo\n");
+
+	o(L"ぱ", L"pa\n");
+	o(L"ぴ", L"pi\n");
+	o(L"ぷ", L"pu\n");
+	o(L"ぺ", L"pe\n");
+	o(L"ぽ", L"po\n");
+
+	o(L"ふ", L"fu\n");
+
+	o(L"ま", L"ma\n");
+	o(L"み", L"mi\n");
+	o(L"む", L"mu\n");
+	o(L"め", L"me\n");
+	o(L"も", L"mo\n");
+
+	o(L"や", L"ya\n");
+	o(L"ゆ", L"yu\n");
+	o(L"よ", L"yo\n");
+
+	o(L"ら", L"ra\n");
+	o(L"り", L"ri\n");
+	o(L"る", L"ru\n");
+	o(L"れ", L"re\n");
+	o(L"ろ", L"ro\n");
+
+	o(L"わ", L"wa\n");
+	o(L"を", L"wo\n");
+
+	o(L"ん", L"n\n");
+
+	o(L"つ", L"tsu\n");
+	o(L"づ", L"zu\n");
+
+	o(L"し", L"shi\n");
+	o(L"じ", L"ji\n");
+
+	o(L"ゔ", L"vu\n");
+
+	/* o(L"", L"\n"); */
+
 #undef o
 
-	int success = 0;
+
+	struct {
+		unsigned int	show_answer:1;
+	}		flags;
+	flags.show_answer = 0;	/* default */
+
+	char		c;
+	while ((c = getopt(argc, argv, "vLh?")) != -1) {
+		switch (c) {
+		case 'v':	/* enable verbose mode: answer are shown on
+				 * failure */
+			flags.show_answer = 1;
+			break;
+		case 'L':	/* print cards and exit */
+			puts("front\tback");
+			puts("-----\t----");
+			ht_iterate(cards, dump_card);
+			goto end;
+			break;
+		case 'h':
+		case '?':
+			printf("usage: %s [-Lvh]\n", argv[0]);
+			goto end;
+			break;
+		}
+	}
+
+	int		success = 0;
 	int		i = 1;
 
 	ht_iterate(cards, select_next_card);
@@ -202,7 +322,7 @@ main()
 
 	while (fgetws(line, 1024, stdin) != NULL) {
 
-		printf("\e[1;1H\e[2J"); /* clear the screen */
+		printf("\e[1;1H\e[2J");	/* clear the screen */
 		if (wcscmp(next_card->answer, line) == 0) {
 			printf("Nice!\n");
 			next_card->priority--;
@@ -210,12 +330,15 @@ main()
 		} else {
 			printf("Wrong!\n");
 			next_card->priority++;
+
+			if (flags.show_answer == 1)
+				printf("right answer: %ls", next_card->answer);
 		}
 		next_card->last_appearance = i;
 
 		ht_iterate(cards, select_next_card);
 		usleep(500000);
-		printf("\e[1;1H\e[2J"); /* clear the screen */
+		printf("\e[1;1H\e[2J");	/* clear the screen */
 		printf("[%d/%d]", success, i);
 		printf("\t%ls\n", next_card->question);
 		printf("? ");
@@ -225,6 +348,7 @@ main()
 
 	putchar('\n');
 
+end:
 	ht_destroy(cards);
 	free(cards);
 	free(line);
