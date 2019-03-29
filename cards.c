@@ -107,11 +107,6 @@ hash_table_insert(struct Cards *ht, const wchar_t * question,
 	ht->buckets[hashed_key].head = kv;
 	ht->buckets[hashed_key].size++;
 
-	/*
-	 * if (ht->buckets[hashed_key].size > 1) { fprintf(stderr,
-	 * "collision!\n"); sleep(1); }
-	 */
-
 	return (0);
 }
 
@@ -182,6 +177,9 @@ main(int argc, char *argv[])
 		fprintf(stderr, "Failed to allocate memory!\n");
 		exit(1);
 	}
+
+	/* int z = 1000; */
+	/* and z-- instead of 1000 */
 
 #define o(k,v) \
 	ht_insert(cards, k, v, 1000, 0)	/* or 1 */
