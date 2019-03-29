@@ -284,7 +284,7 @@ main(int argc, char *argv[])
 
 
 	struct {
-		unsigned int	show_answer:1;
+		unsigned int	show_answer;
 	}		flags;
 	flags.show_answer = 0;	/* default */
 
