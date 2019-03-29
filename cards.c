@@ -107,6 +107,11 @@ hash_table_insert(struct Cards *ht, const wchar_t * question,
 	ht->buckets[hashed_key].head = kv;
 	ht->buckets[hashed_key].size++;
 
+	/*if (ht->buckets[hashed_key].size > 1) {
+		fprintf(stderr, "collision!\n");
+		sleep(1);
+	}*/
+
 	return (0);
 }
 
@@ -135,7 +140,7 @@ select_next_card(struct Card *card)
 	if (next_card == NULL
 	    || card->priority > next_card->priority
 	    || card->last_appearance < next_card->last_appearance) {
-		if (rand() >= RAND_MAX / 6)	/* 5/6 chances of being
+		if (rand() >= RAND_MAX / 3)	/* 2/3 chances of being
 						 * selected */
 			next_card = card;
 	}
@@ -186,16 +191,22 @@ main()
 
 #undef o
 
+	int success = 0;
+	int		i = 1;
+
 	ht_iterate(cards, select_next_card);
 	printf("\e[1;1H\e[2J");
-	printf("%ls\n", next_card->question);
+	printf("[%d/%d]", success, 0);
+	printf("\t%ls\n", next_card->question);
+	printf("? ");
 
-	int		i = 1;
 	while (fgetws(line, 1024, stdin) != NULL) {
 
+		printf("\e[1;1H\e[2J"); /* clear the screen */
 		if (wcscmp(next_card->answer, line) == 0) {
 			printf("Nice!\n");
 			next_card->priority--;
+			success++;
 		} else {
 			printf("Wrong!\n");
 			next_card->priority++;
@@ -203,10 +214,16 @@ main()
 		next_card->last_appearance = i;
 
 		ht_iterate(cards, select_next_card);
-		sleep(1);
-		printf("\e[1;1H\e[2J");
-		printf("%ls\n", next_card->question);
+		usleep(500000);
+		printf("\e[1;1H\e[2J"); /* clear the screen */
+		printf("[%d/%d]", success, i);
+		printf("\t%ls\n", next_card->question);
+		printf("? ");
+
+		i++;
 	}
+
+	putchar('\n');
 
 	ht_destroy(cards);
 	free(cards);
