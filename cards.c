@@ -112,7 +112,7 @@ hash_table_insert(struct Cards *ht, const wchar_t * question,
 
 /* hardcore */
 void
-hash_table_iterate_over(struct Cards *ht, void (*f) (const struct Card *))
+hash_table_iterate_over(struct Cards *ht, void (*f) (struct Card *))
 {
 	for (int i = 0; i < ht->size; i++) {
 		struct Card    *kv = ht->buckets[i].head;
@@ -126,10 +126,10 @@ hash_table_iterate_over(struct Cards *ht, void (*f) (const struct Card *))
 }
 
 /* accessed in main() and select_next_card() */
-static struct Card *next_card;
+static struct Card * next_card;
 
 void
-select_next_card(const struct Card *card)
+select_next_card(struct Card *card)
 {
 
 	if (next_card == NULL
@@ -144,7 +144,7 @@ select_next_card(const struct Card *card)
 }
 
 void
-dump_card(const struct Card *card)
+dump_card(struct Card *card)
 {
 	printf("%ls\t%ls", card->question, card->answer);
 
