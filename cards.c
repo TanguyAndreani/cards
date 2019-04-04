@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* srand(), rand() */
 #include <string.h>
 
-/* sleep() */
+/* sleep(), getopt() */
 #include <unistd.h>
 
-/* srand() */
+/* time() */
 #include <time.h>
 
 /* unicode support */
