@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h> /* srand(), rand() */
+#include <stdlib.h>		/* srand(), rand() */
 #include <string.h>
 
 /* sleep(), getopt() */
@@ -11,6 +11,13 @@
 /* unicode support */
 #include <locale.h>
 #include <wchar.h>
+
+#include "csv.h"
+
+#define MAX_CSV_SIZE 1024
+#define MAX_QA_SIZE 512
+
+#define CARDS "cards.csv"
 
 struct Card {			/* a single card (a bucket's node) */
 
@@ -126,7 +133,7 @@ hash_table_iterate_over(struct Cards *ht, void (*f) (struct Card *))
 }
 
 /* accessed in main() and select_next_card() */
-static struct Card * next_card;
+static struct Card *next_card;
 
 void
 select_next_card(struct Card *card)
@@ -134,10 +141,10 @@ select_next_card(struct Card *card)
 
 	if (next_card == NULL
 	    || (card->priority > next_card->priority
-		&& card->last_appearance <= next_card->last_appearance)) {
-		if (rand() >= RAND_MAX / 3)	/* 2/3 chances of being
+		&& card->last_appearance <= next_card->last_appearance
+		&& (rand() >= RAND_MAX / 3))) {	/* 2/3 chances of being
 						 * selected */
-			next_card = card;
+		next_card = card;
 	}
 
 	return;
@@ -147,6 +154,48 @@ void
 dump_card(struct Card *card)
 {
 	printf("%ls\t%ls", card->question, card->answer);
+
+	return;
+}
+
+void
+dump_csv(struct Card *card)
+{
+	FILE	       *fp = fopen(CARDS, "a");
+	if (fp == NULL)
+		fprintf(stderr, "Could not open file!\n");
+
+
+	wchar_t	       *dup = wcsdup(card->question);
+	if (dup == NULL)
+		return;
+	wchar_t		c;
+	int		i = 0;
+	while ((c = dup[i]) != '\0') {
+		if (dup[i] != '\n') {
+			fprintf(fp, "%lc", dup[i]);
+		}
+		++i;
+	}
+	free(dup);
+
+	fputws(L",", fp);
+
+	dup = wcsdup(card->answer);
+	if (dup == NULL)
+		return;
+	i = 0;
+	while ((c = dup[i]) != '\0') {
+		if (dup[i] != L'\n') {
+			fprintf(fp, "%lc", dup[i]);
+		}
+		++i;
+	}
+	free(dup);
+
+	fprintf(fp, ",%u\n", card->priority);
+
+	fclose(fp);
 
 	return;
 }
@@ -170,7 +219,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	wchar_t	       *line = malloc(sizeof(wchar_t) * 1024);
+	wchar_t	       *line = malloc(sizeof(wchar_t) * MAX_QA_SIZE);
 	if (line == NULL) {
 		ht_destroy(cards);
 		free(cards);
@@ -178,110 +227,40 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	/* int z = 1000; */
-	/* and z-- instead of 1000 */
+	FILE	       *fp = fopen(CARDS, "r");
+	if (fp == NULL)
+		fprintf(stderr, "Could not open file!\n");
 
-#define o(k,v) \
-	ht_insert(cards, k, v, 1000, 0)	/* or 1 */
 
-	o(L"あ", L"a\n");
-	o(L"い", L"i\n");
-	o(L"う", L"u\n");
-	o(L"え", L"e\n");
-	o(L"お", L"o\n");
+	char		csv_line[MAX_CSV_SIZE];
 
-	o(L"か", L"ka\n");
-	o(L"き", L"ki\n");
-	o(L"く", L"ku\n");
-	o(L"け", L"ke\n");
-	o(L"こ", L"ko\n");
+	while (fgets(csv_line, MAX_CSV_SIZE, fp) != NULL) {
 
-	o(L"が", L"ga\n");
-	o(L"ぎ", L"gi\n");
-	o(L"ぐ", L"gu\n");
-	o(L"げ", L"ge\n");
-	o(L"ご", L"go\n");
+#define o(k,v, p, l) \
+	ht_insert(cards, k, v, p, l)
 
-	o(L"さ", L"sa\n");
-	o(L"す", L"su\n");
-	o(L"せ", L"se\n");
-	o(L"そ", L"so\n");
+		char	      **items = parse_csv(csv_line);
+		if (!items[0] || !items[1] || !items[2])
+			continue;
 
-	o(L"ざ", L"za\n");
-	o(L"ず", L"zu\n");
-	o(L"ぜ", L"ze\n");
-	o(L"ぞ", L"zo\n");
+		wchar_t		q[MAX_QA_SIZE], a[MAX_QA_SIZE];
+		swprintf(q, MAX_QA_SIZE, L"%hs", items[0]);
+		swprintf(a, MAX_QA_SIZE, L"%hs\n", items[1]);
 
-	o(L"じゃ", L"jya\n");
-	o(L"じゅ", L"jyu\n");
-	o(L"じょ", L"jyo\n");
+		unsigned int	p = strtol(items[2], NULL, 10);
+		o(q, a, p == 0 ? 1000 : p, 0);
 
-	o(L"た", L"ta\n");
-	o(L"て", L"te\n");
-	o(L"と", L"to\n");
-
-	o(L"だ", L"da\n");
-	o(L"で", L"de\n");
-	o(L"ど", L"do\n");
-
-	o(L"な", L"na\n");
-	o(L"に", L"ni\n");
-	o(L"ぬ", L"nu\n");
-	o(L"ね", L"ne\n");
-	o(L"の", L"no\n");
-
-	o(L"は", L"ha\n");
-	o(L"ひ", L"hi\n");
-	o(L"へ", L"he\n");
-	o(L"ほ", L"ho\n");
-
-	o(L"ば", L"ba\n");
-	o(L"び", L"bi\n");
-	o(L"ぶ", L"bu\n");
-	o(L"べ", L"be\n");
-	o(L"ぼ", L"bo\n");
-
-	o(L"ぱ", L"pa\n");
-	o(L"ぴ", L"pi\n");
-	o(L"ぷ", L"pu\n");
-	o(L"ぺ", L"pe\n");
-	o(L"ぽ", L"po\n");
-
-	o(L"ふ", L"fu\n");
-
-	o(L"ま", L"ma\n");
-	o(L"み", L"mi\n");
-	o(L"む", L"mu\n");
-	o(L"め", L"me\n");
-	o(L"も", L"mo\n");
-
-	o(L"や", L"ya\n");
-	o(L"ゆ", L"yu\n");
-	o(L"よ", L"yo\n");
-
-	o(L"ら", L"ra\n");
-	o(L"り", L"ri\n");
-	o(L"る", L"ru\n");
-	o(L"れ", L"re\n");
-	o(L"ろ", L"ro\n");
-
-	o(L"わ", L"wa\n");
-	o(L"を", L"wo\n");
-
-	o(L"ん", L"n\n");
-
-	o(L"つ", L"tsu\n");
-	o(L"づ", L"zu\n");
-
-	o(L"し", L"shi\n");
-	o(L"じ", L"ji\n");
-
-	o(L"ゔ", L"vu\n");
-
-	/* o(L"", L"\n"); */
-
+		free_csv_line(items);
 #undef o
 
+	}
+
+	fclose(fp);
+
+	if (cards->population == 0) {
+		printf("No cards!\n");
+		goto end;
+	}
 
 	struct {
 		unsigned int	show_answer;
@@ -299,6 +278,7 @@ main(int argc, char *argv[])
 			puts("front\tback");
 			puts("-----\t----");
 			ht_iterate(cards, dump_card);
+			puts("");
 			goto end;
 			break;
 		case 'h':
@@ -318,10 +298,19 @@ main(int argc, char *argv[])
 	printf("\t%ls\n", next_card->question);
 	printf("? ");
 
-	while (fgetws(line, 1024, stdin) != NULL) {
+	while (fgetws(line, MAX_QA_SIZE, stdin) != NULL) {
 
 		printf("\e[1;1H\e[2J");	/* clear the screen */
-		if (wcscmp(next_card->answer, line) == 0) {
+		if (wcscmp(L"!save\n", line) == 0) {
+			fp = fopen(CARDS, "w");
+			if (fp == NULL)
+				fprintf(stderr, "Could not open file!\n");
+			fputs("", fp);
+			fclose(fp);
+			ht_iterate(cards, dump_csv);
+			i--;	/* cancels i++ */
+			goto prompt;	/* show same card again */
+		} else if (wcscmp(next_card->answer, line) == 0) {
 			printf("Nice!\n");
 			next_card->priority--;
 			success++;
@@ -330,12 +319,14 @@ main(int argc, char *argv[])
 			next_card->priority++;
 
 			if (flags.show_answer == 1)
-				printf("right answer: %ls", next_card->answer);
+				printf("right answer: %ls\n", next_card->answer);
 		}
 		next_card->last_appearance = i;
 
 		ht_iterate(cards, select_next_card);
 		usleep(500000);
+
+prompt:
 		printf("\e[1;1H\e[2J");	/* clear the screen */
 		printf("[%d/%d]", success, i);
 		printf("\t%ls\n", next_card->question);

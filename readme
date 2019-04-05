@@ -1,3 +1,8 @@
 See https://soykaf.me/2019-03-28-exg.html
 
+Edit cards.csv and save your session by typing !save while studying
+
+This project includes files from csv_parser 
+  (https://github.com/semitrivial/csv_parser)
+
 Known to compile and run on Debian Stretch and FreeBSD 12
