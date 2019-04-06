@@ -19,6 +19,8 @@
 
 #define CARDS "cards.csv"
 
+char	       *filename = CARDS;
+
 struct Card {			/* a single card (a bucket's node) */
 
 	wchar_t	       *question;	/* key */
@@ -117,18 +119,24 @@ hash_table_insert(struct Cards *ht, const wchar_t * question,
 	return (0);
 }
 
+int		stop_iterating;
+
 /* hardcore */
 void
 hash_table_iterate_over(struct Cards *ht, void (*f) (struct Card *))
 {
+	stop_iterating = 0;
 	for (int i = 0; i < ht->size; i++) {
 		struct Card    *kv = ht->buckets[i].head;
 		while (kv != NULL) {
 			f(kv);
+			if (stop_iterating == 1)
+				goto fail;
 			kv = kv->next;
 		}
 	}
 
+fail:
 	return;
 }
 
@@ -161,37 +169,21 @@ dump_card(struct Card *card)
 void
 dump_csv(struct Card *card)
 {
-	FILE	       *fp = fopen(CARDS, "a");
-	if (fp == NULL)
-		fprintf(stderr, "Could not open file!\n");
-
-
-	wchar_t	       *dup = wcsdup(card->question);
-	if (dup == NULL)
+	FILE	       *fp = fopen(filename, "a");
+	if (fp == NULL) {
+		fprintf(stderr, "Could not open %s in append mode!\n", filename);
+		usleep(500000);
+		stop_iterating = 1;
 		return;
-	wchar_t		c;
-	int		i = 0;
-	while ((c = dup[i]) != '\0') {
-		if (dup[i] != '\n') {
-			fprintf(fp, "%lc", dup[i]);
-		}
-		++i;
 	}
-	free(dup);
 
-	fputws(L",", fp);
+	fprintf(fp, "%ls,", card->question);
 
-	dup = wcsdup(card->answer);
-	if (dup == NULL)
-		return;
-	i = 0;
-	while ((c = dup[i]) != '\0') {
-		if (dup[i] != L'\n') {
-			fprintf(fp, "%lc", dup[i]);
-		}
-		++i;
+	wchar_t	       *dup = card->answer;
+	while (*dup != '\n') {	/* newline terminated string */
+		fputwc(*dup, fp);
+		dup++;
 	}
-	free(dup);
 
 	fprintf(fp, ",%u\n", card->priority);
 
@@ -227,9 +219,41 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	FILE	       *fp = fopen(CARDS, "r");
-	if (fp == NULL)
-		fprintf(stderr, "Could not open file!\n");
+
+	struct {
+		unsigned int	show_answer;
+		unsigned int	dump_cards;
+	}		flags;
+	flags.show_answer = 0;	/* default */
+	flags.dump_cards = 0;
+
+	char		c;
+	while ((c = getopt(argc, argv, "f:vLh?")) != -1) {
+		switch (c) {
+		case 'f':
+			filename = optarg;
+			break;
+		case 'v':	/* enable verbose mode: answer are shown on
+				 * failure */
+			flags.show_answer = 1;
+			break;
+		case 'L':	/* print cards and exit */
+			flags.dump_cards = 1;
+			break;
+		case 'h':
+		case '?':
+			printf("usage: %s [-Lvh]\n", argv[0]);
+			goto end;
+			break;
+		}
+	}
+
+
+	FILE	       *fp = fopen(filename, "r");
+	if (fp == NULL) {
+		fprintf(stderr, "Could not open %s in read mode!\n", filename);
+		goto end;
+	}
 
 
 	char		csv_line[MAX_CSV_SIZE];
@@ -262,32 +286,11 @@ main(int argc, char *argv[])
 		goto end;
 	}
 
-	struct {
-		unsigned int	show_answer;
-	}		flags;
-	flags.show_answer = 0;	/* default */
-
-	char		c;
-	while ((c = getopt(argc, argv, "vLh?")) != -1) {
-		switch (c) {
-		case 'v':	/* enable verbose mode: answer are shown on
-				 * failure */
-			flags.show_answer = 1;
-			break;
-		case 'L':	/* print cards and exit */
-			puts("front\tback");
-			puts("-----\t----");
-			ht_iterate(cards, dump_card);
-			puts("");
-			goto end;
-			break;
-		case 'h':
-		case '?':
-			printf("usage: %s [-Lvh]\n", argv[0]);
-			goto end;
-			break;
-		}
+	if (flags.dump_cards == 1) {
+		ht_iterate(cards, dump_card);
+		goto end;
 	}
+
 
 	int		success = 0;
 	int		i = 1;
@@ -302,9 +305,13 @@ main(int argc, char *argv[])
 
 		printf("\e[1;1H\e[2J");	/* clear the screen */
 		if (wcscmp(L"!save\n", line) == 0) {
-			fp = fopen(CARDS, "w");
-			if (fp == NULL)
-				fprintf(stderr, "Could not open file!\n");
+			fp = fopen(filename, "w");
+			if (fp == NULL) {
+				fprintf(stderr, "Could not open %s in write mode!\n", filename);
+				usleep(500000);
+				i--;
+				goto prompt;
+			}
 			fputs("", fp);
 			fclose(fp);
 			ht_iterate(cards, dump_csv);
