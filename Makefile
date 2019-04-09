@@ -2,7 +2,8 @@ CC=cc
 STD=c99
 CFLAGS=-g -Wall
 BIN=a.out
-SRC=cards.c csv.c split.c fread_csv_line.c
+SRC=cards.c csv.c
+HEADERS=csv.h
 
-$(BIN): $(SRC)
+$(BIN): $(SRC) $(HEADERS)
 	$(CC) --std=$(STD) $(CFLAGS) -o $(BIN) $(SRC)
