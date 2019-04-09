@@ -257,15 +257,21 @@ main(int argc, char *argv[])
 
 
 	char		csv_line[MAX_CSV_SIZE];
+	int		l = 0;
 
 	while (fgets(csv_line, MAX_CSV_SIZE, fp) != NULL) {
+
+		l++;
 
 #define o(k,v, p, l) \
 	ht_insert(cards, k, v, p, l)
 
 		char	      **items = parse_csv(csv_line);
-		if (!items[0] || !items[1] || !items[2])
-			continue;
+		if (items == NULL || !items[0] || !items[1] || !items[2]) {
+			fprintf(stderr, "Couldn't parse line %d!\n", l);
+			fclose(fp);
+			goto end;
+		}
 
 		wchar_t		q[MAX_QA_SIZE], a[MAX_QA_SIZE];
 		swprintf(q, MAX_QA_SIZE, L"%hs", items[0]);
