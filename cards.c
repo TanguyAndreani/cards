@@ -23,8 +23,8 @@ char	       *filename = CARDS;
 
 struct Card {			/* a single card (a bucket's node) */
 
-	wchar_t	       *question;	/* key */
-	wchar_t	       *answer;
+	wchar_t	       *front;	/* key */
+	wchar_t	       *back;
 	unsigned int	priority;
 	unsigned int	last_appearance;
 
@@ -75,8 +75,8 @@ hash_table_destroy(struct Cards *ht)
 
 		struct Card    *kv;
 		while ((kv = ht->buckets[i].head) != NULL) {
-			free((void *)kv->question);
-			free((void *)kv->answer);
+			free((void *)kv->front);
+			free((void *)kv->back);
 			ht->buckets[i].head = kv->next;
 			ht->buckets[i].size--;
 			free(kv);
@@ -90,22 +90,22 @@ hash_table_destroy(struct Cards *ht)
 }
 
 int
-hash_table_insert(struct Cards *ht, const wchar_t * question,
-		  const wchar_t * answer, unsigned int priority,
+hash_table_insert(struct Cards *ht, const wchar_t * front,
+		  const wchar_t * back, unsigned int priority,
 		  unsigned int last_appearance)
 {
-	int		hashed_key = hash_key(ht, question);
+	int		hashed_key = hash_key(ht, front);
 
 	struct Card    *kv = malloc(sizeof(struct Card));
 	if (kv == NULL)
 		return (1);
 
-	kv->question = wcsdup(question);
-	if (kv->question == NULL)
+	kv->front = wcsdup(front);
+	if (kv->front == NULL)
 		return (1);
 
-	kv->answer = wcsdup(answer);
-	if (kv->answer == NULL)
+	kv->back = wcsdup(back);
+	if (kv->back == NULL)
 		return (1);
 
 	kv->priority = priority;
@@ -161,7 +161,7 @@ select_next_card(struct Card *card)
 void
 dump_card(struct Card *card)
 {
-	printf("%ls\t%ls", card->question, card->answer);
+	printf("%ls\t%ls", card->front, card->back);
 
 	return;
 }
@@ -177,9 +177,9 @@ dump_csv(struct Card *card)
 		return;
 	}
 
-	fprintf(fp, "%ls,", card->question);
+	fprintf(fp, "%ls,", card->front);
 
-	wchar_t	       *dup = card->answer;
+	wchar_t	       *dup = card->back;
 	while (*dup != '\n') {	/* newline terminated string */
 		fputwc(*dup, fp);
 		dup++;
@@ -304,7 +304,7 @@ main(int argc, char *argv[])
 	ht_iterate(cards, select_next_card);
 	printf("\e[1;1H\e[2J");
 	printf("[%d/%d]", success, 0);
-	printf("\t%ls\n", next_card->question);
+	printf("\t%ls\n", next_card->front);
 	printf("? ");
 
 	while (fgetws(line, MAX_QA_SIZE, stdin) != NULL) {
@@ -323,7 +323,7 @@ main(int argc, char *argv[])
 			ht_iterate(cards, dump_csv);
 			i--;	/* cancels i++ */
 			goto prompt;	/* show same card again */
-		} else if (wcscmp(next_card->answer, line) == 0) {
+		} else if (wcscmp(next_card->back, line) == 0) {
 			printf("Nice!\n");
 			next_card->priority--;
 			success++;
@@ -332,7 +332,7 @@ main(int argc, char *argv[])
 			next_card->priority++;
 
 			if (flags.show_answer == 1)
-				printf("right answer: %ls\n", next_card->answer);
+				printf("right answer: %ls\n", next_card->back);
 		}
 		next_card->last_appearance = i;
 
@@ -342,7 +342,7 @@ main(int argc, char *argv[])
 prompt:
 		printf("\e[1;1H\e[2J");	/* clear the screen */
 		printf("[%d/%d]", success, i);
-		printf("\t%ls\n", next_card->question);
+		printf("\t%ls\n", next_card->front);
 		printf("? ");
 
 		i++;
