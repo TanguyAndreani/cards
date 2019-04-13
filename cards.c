@@ -54,7 +54,7 @@ hash_key(const struct Cards *ht, const wchar_t * key)
 }
 
 int
-hash_table_init(struct Cards *ht, unsigned int size)
+ht_init(struct Cards *ht, unsigned int size)
 {
 	ht->size = size;
 	ht->population = 0;
@@ -69,7 +69,7 @@ hash_table_init(struct Cards *ht, unsigned int size)
 }
 
 void
-hash_table_destroy(struct Cards *ht)
+ht_destroy(struct Cards *ht)
 {
 	for (unsigned int i = 0; i < ht->size; i++) {
 
@@ -90,9 +90,9 @@ hash_table_destroy(struct Cards *ht)
 }
 
 int
-hash_table_insert(struct Cards *ht, const wchar_t * front,
-		  const wchar_t * back, unsigned int priority,
-		  unsigned int last_appearance)
+ht_insert(struct Cards *ht, const wchar_t * front,
+	  const wchar_t * back, unsigned int priority,
+	  unsigned int last_appearance)
 {
 	int		hashed_key = hash_key(ht, front);
 
@@ -123,7 +123,7 @@ int		stop_iterating;
 
 /* hardcore */
 void
-hash_table_iterate_over(struct Cards *ht, void (*f) (struct Card *))
+ht_iterate(struct Cards *ht, void (*f) (struct Card *))
 {
 	stop_iterating = 0;
 	for (int i = 0; i < ht->size; i++) {
@@ -192,11 +192,6 @@ dump_csv(struct Card *card)
 	return;
 }
 
-#define ht_init		hash_table_init
-#define ht_insert	hash_table_insert
-#define ht_destroy	hash_table_destroy
-#define ht_iterate	hash_table_iterate_over
-
 int
 main(int argc, char *argv[])
 {
@@ -263,9 +258,6 @@ main(int argc, char *argv[])
 
 		l++;
 
-#define o(k,v, p, l) \
-	ht_insert(cards, k, v, p, l)
-
 		char	      **items = parse_csv(csv_line);
 		if (items == NULL || !items[0] || !items[1] || !items[2]) {
 			fprintf(stderr, "Couldn't parse line %d!\n", l);
@@ -278,10 +270,9 @@ main(int argc, char *argv[])
 		swprintf(a, MAX_QA_SIZE, L"%hs\n", items[1]);
 
 		unsigned int	p = strtol(items[2], NULL, 10);
-		o(q, a, p == 0 ? 1000 : p, 0);
+		ht_insert(cards, q, a, p == 0 ? 1000 : p, 0);
 
 		free_csv_line(items);
-#undef o
 
 	}
 
