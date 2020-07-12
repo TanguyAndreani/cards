@@ -1,9 +1,7 @@
 CC=cc
-STD=c99
 CFLAGS=-g -Wall
-BIN=a.out
+NAME=cards
 SRC=cards.c csv.c
-HEADERS=csv.h
+OBJ=$(SRC:.c=.o)
 
-$(BIN): $(SRC) $(HEADERS)
-	$(CC) --std=$(STD) $(CFLAGS) -o $(BIN) $(SRC)
+$(NAME): $(OBJ)
