@@ -1,13 +1,5 @@
 # flashcards
 
-![](https://lambdafun.neocities.org/assets/cards.gif)
-
-## Online resources (older->newer)
-
-- https://soykaf.me/2019-03-28-exg.html
-- https://soykaf.me/2019-04-05-45Y.html
-- https://soykaf.me/assets/cards2.mp4
-
 ## Build and run
 
     make
