@@ -1,9 +1,11 @@
 # flashcards
 
+![C/C++ CI](https://github.com/TanguyAndreani/cards/workflows/C/C++%20CI/badge.svg)
+
 ## Build and run
 
     make
-    ./a.out -f hiragana.csv
+    ./cards -f hiragana.csv
     # at some point enter !save and exit with CTRL-D
 
 ## Tutorial
@@ -35,7 +37,7 @@ this:
 ## Tips
 
     cat hiragana.csv katakana.csv > cards.csv
-    ./a.out
+    ./cards
 
 ## Credits
 
